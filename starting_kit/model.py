@@ -1,50 +1,33 @@
 import numpy as np   # We recommend to use numpy arrays
 from os.path import isfile
-import numpy as np 
+import pandas as pd
+from sklearn.base import BaseEstimator
 
 # Model Imports
-from sklearn import linear_model
-from sklearn.tree import DecisionTreeRegressor
-from sklearn import svm
-from sklearn.kernel_ridge import KernelRidge
-from sklearn.neighbors import KNeighborsRegressor
 from sklearn.ensemble import RandomForestRegressor
+from sklearn.tree import DecisionTreeRegressor
 from sklearn.ensemble import GradientBoostingRegressor
-from sklearn.tree import ExtraTreeRegressor
-from sklearn.gaussian_process import GaussianProcessRegressor
-from sklearn.linear_model import ElasticNet
-from sklearn.linear_model import LinearRegression
 from sklearn.ensemble import VotingRegressor
-from sklearn.ensemble import StackingRegressor
+
+# Preprocessing
+from sklearn.neighbors import LocalOutlierFactor
+
 
 class model (BaseEstimator):
     def __init__(self):
         '''
         This constructor is supposed to initialize data members.
-        Use triple quotes for function documentation. 
+        Use triple quotes for function documentation.
         '''
         self.num_train_samples= 38563
         self.num_feat=59
         self.num_labels=1
         self.is_trained=False
-        self.preprocess = VOTRE_PREPROCESSING # Ex. PCA()
-        
+        self.preprocess = LocalOutlierFactor(n_neighbors=400)
         voter1 = GradientBoostingRegressor()
         voter2 = RandomForestRegressor()
         voter3 = DecisionTreeRegressor()
-        model_list = [                                                      
-            KNeighborsRegressor(n_neighbors=5),
-            svm.SVR(),
-            GaussianProcessRegressor(), 
-            ElasticNet(),
-            DecisionTreeRegressor(),
-            RandomForestRegressor(max_depth=9),
-            GradientBoostingRegressor(),
-            VotingRegressor(estimators=[('gb', voter1), ('lr', voter3)]),
-            VotingRegressor(estimators=[('gb', voter1), ('rf', voter2), ('lr', voter3)]),
-            StackingRegressor(estimators=[('gb', voter1), ('rf', voter2), ('lr', voter3)])
-            ]
-        self.mod = VotingRegressor(estimators=[('gb', voter1), ('lr', voter3)])
+        self.mod = VotingRegressor(estimators=[('gb', voter1), ('rf', voter2), ('lr', voter3)])
     
     def fit(self, X, y):
         '''
@@ -63,8 +46,17 @@ class model (BaseEstimator):
         if X.ndim>1: self.num_feat = X.shape[1]
         if y.ndim>1: self.num_labels = y.shape[1]
 
-        X_preprocess = self.preprocess.fit_transform(X)
-        self.mod.fit(X_preprocess, y)
+        
+        outliers = self.preprocess.fit_predict(X)
+        X_preprocess = []
+        y_preprocess = []
+        for i in range(len(outliers)):
+            if outliers[i]==1:
+                X_preprocess.append(X[i])
+                y_preprocess.append(y[i])
+        X_preprocess = np.array(X_preprocess)
+        y_preprocess = np.array(y_preprocess)
+        self.mod.fit(X_preprocess, y_preprocess)
         self.is_trained = True
 
     def predict(self, X):
@@ -83,9 +75,7 @@ class model (BaseEstimator):
         if X.ndim>1: num_feat = X.shape[1]
         y = np.zeros([num_test_samples, self.num_labels])
 
-
-        X_preprocess = self.preprocess.transform(X)
-        y = self.mod.predict(X_preprocess)
+        y = self.mod.predict(X)
         return y
 
     def save(self, path="./"):
