@@ -1,8 +1,11 @@
 # L2 INFO232 Mini-project Solve Xporters traffic volume problem
 
 Université Paris Saclay
+
 Group Segway
+
 Group Member: CHEN Shuangrui, Alcantara Hernandez Ursula, LIU Yongjie, soltani Hicham, XU zhenhai, YACHOUTI	Mouad
+
 Professor: Isabelle Guyon
 
 ### Context
